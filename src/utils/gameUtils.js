@@ -1,0 +1,338 @@
+export const GAME_CONFIG = {
+  gravity: 0.8,
+  jumpForce: -18, // Increased from -16 for higher jumps
+  runnerSpeed: 4,
+  groundLevelPercent: 75, // Ground at 75% of screen height
+  minObstacleDistance: 300,
+  jumpHeight: 140, // Increased from 120
+  duckHeight: 30,
+  runnerWidth: 40,
+  runnerHeight: 60
+};
+
+// Function to get responsive ground level based on screen height
+export const getGroundLevel = () => {
+  return window.innerHeight * (GAME_CONFIG.groundLevelPercent / 100);
+};
+
+export const JUMP_OBSTACLES = {
+  meeting: { 
+    width: 70, 
+    height: 85, 
+    color: '#FF4757', 
+    icon: '👥', 
+    title: 'MEETING',
+    shadow: '#FF3742',
+    glow: 'rgba(255, 71, 87, 0.4)',
+    priority: 'high',
+    type: 'jump'
+  },
+  email: { 
+    width: 60, 
+    height: 75, 
+    color: '#2ED573', 
+    icon: '📧', 
+    title: 'EMAIL',
+    shadow: '#26C65F',
+    glow: 'rgba(46, 213, 115, 0.4)',
+    priority: 'medium',
+    type: 'jump'
+  },
+  deadline: { 
+    width: 75, 
+    height: 80, 
+    color: '#FF6348', 
+    icon: '⏰', 
+    title: 'DEADLINE',
+    shadow: '#FF4F37',
+    glow: 'rgba(255, 99, 72, 0.4)',
+    priority: 'critical',
+    type: 'jump'
+  },
+  boss: { 
+    width: 80, 
+    height: 95, 
+    color: '#8E44AD', 
+    icon: '👨‍💼', 
+    title: 'BOSS',
+    shadow: '#7D3C98',
+    glow: 'rgba(142, 68, 173, 0.4)',
+    priority: 'critical',
+    type: 'jump'
+  },
+  printer: { 
+    width: 65, 
+    height: 70, 
+    color: '#34495E', 
+    icon: '🖨️', 
+    title: 'PRINTER',
+    shadow: '#2C3E50',
+    glow: 'rgba(52, 73, 94, 0.4)',
+    priority: 'medium',
+    type: 'jump'
+  }
+};
+
+export const DUCK_OBSTACLES = {
+  drone: { 
+    width: 90, 
+    height: 50, 
+    color: '#E74C3C', 
+    icon: '🚁', 
+    title: 'SURVEILLANCE',
+    shadow: '#C0392B',
+    glow: 'rgba(231, 76, 60, 0.4)',
+    priority: 'high',
+    type: 'duck',
+    yOffset: 80 // Offset from ground level
+  },
+  banner: { 
+    width: 100, 
+    height: 40, 
+    color: '#F39C12', 
+    icon: '🏷️', 
+    title: 'COMPANY BANNER',
+    shadow: '#E67E22',
+    glow: 'rgba(243, 156, 18, 0.4)',
+    priority: 'medium',
+    type: 'duck',
+    yOffset: 70
+  },
+  camera: { 
+    width: 80, 
+    height: 45, 
+    color: '#9B59B6', 
+    icon: '📹', 
+    title: 'SECURITY CAM',
+    shadow: '#8E44AD',
+    glow: 'rgba(155, 89, 182, 0.4)',
+    priority: 'high',
+    type: 'duck',
+    yOffset: 75
+  },
+  wifi: { 
+    width: 85, 
+    height: 35, 
+    color: '#3498DB', 
+    icon: '📶', 
+    title: 'WIFI SIGNAL',
+    shadow: '#2980B9',
+    glow: 'rgba(52, 152, 219, 0.4)',
+    priority: 'low',
+    type: 'duck',
+    yOffset: 65
+  }
+};
+
+// Boss enemy configuration
+export const BOSS_CONFIG = {
+  width: 120,
+  height: 100,
+  color: '#8B0000',
+  shadow: '#660000',
+  glow: 'rgba(139, 0, 0, 0.6)',
+  spawnChance: 0.015, // Increased spawn chance
+  minScoreToSpawn: 500, // Boss appears after score 500
+  shootDuration: 180, // 3 seconds at 60fps
+  type: 'boss'
+};
+
+// Check if boss should spawn based on score milestones
+export const shouldSpawnBoss = (score, lastBossScore = 0) => {
+  // Boss spawns at 500, 1000, 1500, 2000, etc. (every 500 points)
+  const currentMilestone = Math.floor(score / 500) * 500;
+  const lastMilestone = Math.floor(lastBossScore / 500) * 500;
+  
+  // If we've reached a new milestone and haven't spawned a boss for this milestone
+  if (currentMilestone > lastMilestone && currentMilestone >= 500) {
+    return Math.random() < 0.3; // 30% chance when milestone is reached
+  }
+  
+  return false;
+};
+
+export const generateObstacle = (x, score = 0, lastBossScore = 0) => {
+  const groundLevel = getGroundLevel();
+  
+  // Check if boss should spawn based on score milestones
+  if (shouldSpawnBoss(score, lastBossScore)) {
+    return {
+      id: Math.random().toString(36).substr(2, 9),
+      x,
+      y: groundLevel - BOSS_CONFIG.height,
+      width: BOSS_CONFIG.width,
+      height: BOSS_CONFIG.height,
+      type: 'devil_boss',
+      passed: false,
+      config: BOSS_CONFIG,
+      obstacleType: 'boss',
+      isShooting: false,
+      shootTimer: 0,
+      bullets: [],
+      spawnScore: Math.floor(score / 500) * 500 // Track which milestone this boss represents
+    };
+  }
+  
+  // Normal obstacle generation (70% jump, 30% duck)
+  const useJumpObstacle = Math.random() < 0.7;
+  const obstacleTypes = useJumpObstacle ? JUMP_OBSTACLES : DUCK_OBSTACLES;
+  const types = Object.keys(obstacleTypes);
+  const type = types[Math.floor(Math.random() * types.length)];
+  const config = obstacleTypes[type];
+  
+  return {
+    id: Math.random().toString(36).substr(2, 9),
+    x,
+    y: config.yOffset !== undefined ? groundLevel - config.yOffset : groundLevel - config.height,
+    width: config.width,
+    height: config.height,
+    type,
+    passed: false,
+    config,
+    obstacleType: config.type
+  };
+};
+
+export const checkCollision = (runner, obstacle) => {
+  const margin = 8;
+  const runnerWidth = runner.isDucking ? 50 : GAME_CONFIG.runnerWidth;
+  const runnerHeight = runner.isDucking ? 30 : GAME_CONFIG.runnerHeight;
+  
+  // Special collision for boss - runner destroys boss on contact
+  if (obstacle.obstacleType === 'boss') {
+    const collision = (
+      runner.x + runnerWidth - margin > obstacle.x &&
+      runner.x + margin < obstacle.x + obstacle.width &&
+      runner.y + runnerHeight - margin > obstacle.y &&
+      runner.y + margin < obstacle.y + obstacle.height
+    );
+    
+    if (collision) {
+      obstacle.destroyed = true;
+      return false; // Boss gets destroyed, no game over
+    }
+    
+    // Check bullet collisions
+    if (obstacle.bullets) {
+      for (const bullet of obstacle.bullets) {
+        const bulletCollision = (
+          runner.x + runnerWidth - margin > bullet.x &&
+          runner.x + margin < bullet.x + bullet.width &&
+          runner.y + runnerHeight - margin > bullet.y &&
+          runner.y + margin < bullet.y + bullet.height
+        );
+        
+        if (bulletCollision && !runner.isDucking) {
+          return true; // Game over if hit by bullet while not ducking
+        }
+      }
+    }
+    
+    return false;
+  }
+  
+  // Normal collision detection
+  return (
+    runner.x + runnerWidth - margin > obstacle.x &&
+    runner.x + margin < obstacle.x + obstacle.width &&
+    runner.y + runnerHeight - margin > obstacle.y &&
+    runner.y + margin < obstacle.y + obstacle.height
+  );
+};
+
+export const updateBoss = (boss, runnerX) => {
+  if (boss.destroyed) return boss;
+  
+  // Start shooting when runner gets close
+  const distanceToRunner = boss.x - runnerX;
+  if (distanceToRunner < 400 && distanceToRunner > 0 && !boss.isShooting) {
+    boss.isShooting = true;
+    boss.shootTimer = BOSS_CONFIG.shootDuration;
+  }
+  
+  // Update shooting
+  if (boss.isShooting && boss.shootTimer > 0) {
+    boss.shootTimer--;
+    
+    // Spawn bullets every 20 frames (3 bullets per second)
+    if (boss.shootTimer % 20 === 0) {
+      if (!boss.bullets) boss.bullets = [];
+      boss.bullets.push({
+        id: Math.random().toString(36).substr(2, 9),
+        x: boss.x - 10,
+        y: boss.y + 30, // Head level
+        width: 8,
+        height: 4,
+        velocityX: -8
+      });
+    }
+    
+    if (boss.shootTimer <= 0) {
+      boss.isShooting = false;
+    }
+  }
+  
+  // Update bullets
+  if (boss.bullets) {
+    boss.bullets = boss.bullets
+      .map(bullet => ({
+        ...bullet,
+        x: bullet.x + bullet.velocityX
+      }))
+      .filter(bullet => bullet.x > -50); // Remove bullets that went off screen
+  }
+  
+  return boss;
+};
+
+export const createParticles = (x, y, count = 12) => {
+  const particles = [];
+  const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#FFD93D'];
+  
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      id: Math.random().toString(36).substr(2, 9),
+      x: x + Math.random() * 40 - 20,
+      y: y + Math.random() * 40 - 20,
+      velocityX: (Math.random() - 0.5) * 10,
+      velocityY: Math.random() * -8 - 3,
+      life: 1,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: Math.random() * 6 + 3
+    });
+  }
+  return particles;
+};
+
+export const updateParticles = (particles) => {
+  return particles
+    .map(particle => ({
+      ...particle,
+      x: particle.x + particle.velocityX,
+      y: particle.y + particle.velocityY,
+      velocityY: particle.velocityY + 0.5,
+      life: particle.life - 0.025,
+      size: particle.size * 0.97
+    }))
+    .filter(particle => particle.life > 0);
+};
+
+// Slower, more balanced speed progression - increases every 15 seconds
+export const calculateSpeed = (score) => {
+  const baseSpeed = 1;
+  const speedIncrement = 0.1;
+  const maxSpeed = 2.5;
+  
+  // Increase speed every 200 points (roughly every 15 seconds at 60fps)
+  const speedLevel = Math.floor(score / 200);
+  const newSpeed = baseSpeed + (speedLevel * speedIncrement);
+  
+  return Math.min(newSpeed, maxSpeed);
+};
+
+// More conservative obstacle spawn rate to ensure playability
+export const getObstacleSpawnRate = (speed) => {
+  const baseRate = 0.012;
+  const speedMultiplier = 1 + (speed - 1) * 0.3;
+  return baseRate * speedMultiplier;
+};
