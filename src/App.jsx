@@ -4,6 +4,7 @@ import Runner from './components/Runner';
 import Obstacle from './components/Obstacle';
 import Boss from './components/Boss';
 import GameBackground from './components/GameBackground';
+import UFO from './components/UFO';
 import { 
   GAME_CONFIG, 
   generateObstacle, 
@@ -13,7 +14,8 @@ import {
   updateBoss,
   calculateSpeed,
   getObstacleSpawnRate,
-  getGroundLevel
+  getGroundLevel,
+  JUMP_OBSTACLES
 } from './utils/gameUtils';
 
 function App() {
@@ -43,6 +45,19 @@ function App() {
     bossActive: false,
     lastBossScore: 0
   });
+
+  // UFO state
+  const [ufo, setUfo] = useState({
+    active: false,
+    x: -100,
+    y: 60,
+    isDropping: false,
+    dropY: 0,
+    dropObstacle: null,
+    hasDropped: false
+  });
+  const ufoTimerRef = useRef(0);
+  const ufoDropRef = useRef(false);
 
   const gameLoopRef = useRef();
   const keysRef = useRef(new Set());
@@ -247,6 +262,93 @@ function App() {
       // Update game time
       const newGameTime = prev.gameTime + 1;
 
+      // UFO logic
+      setUfo(ufoPrev => {
+        let next = { ...ufoPrev };
+        // Randomly activate UFO only if not active and far off screen
+        if (!ufoPrev.active && next.x <= -100 && Math.random() < 0.002 && !prev.bossActive) {
+          next.active = true;
+          next.x = -100;
+          next.y = 60 + Math.random() * 40;
+          next.isDropping = false;
+          next.dropObstacle = null;
+          next.hasDropped = false;
+        }
+        // Move UFO if active
+        if (next.active) {
+          next.x += 1.5;
+          // Only drop once per flyby
+          if (!next.isDropping && !next.hasDropped && next.x > 200 && next.x < window.innerWidth - 200) {
+            // Only drop if area is clear (no obstacles within 120px to the left or right of the drop position)
+            const dropX = next.x + 24;
+            const dropWidth = 60; // Approximate width of dropped obstacle
+            const safeGap = 120;
+            const clear = !prev.obstacles.some(o => {
+              const oLeft = o.x;
+              const oRight = o.x + o.width;
+              const dropLeft = dropX;
+              const dropRight = dropX + dropWidth;
+              // If any obstacle is within safeGap to the left or right of the drop
+              return (
+                (oRight > dropLeft - safeGap && oLeft < dropLeft) ||
+                (oLeft < dropRight + safeGap && oRight > dropRight)
+              );
+            });
+            if (clear && Math.random() < 0.02) {
+              next.isDropping = true;
+              next.hasDropped = true;
+              next.dropY = getGroundLevel() - 80;
+              // Pick a random obstacle to drop (from jump obstacles)
+              const keys = Object.keys(JUMP_OBSTACLES);
+              const type = keys[Math.floor(Math.random() * keys.length)];
+              const config = { ...JUMP_OBSTACLES[type], title: 'More Fcking Tasks' };
+              next.dropObstacle = {
+                id: 'ufo-' + Math.random().toString(36).substr(2, 9),
+                x: next.x + 24,
+                y: next.y + 48,
+                width: config.width,
+                height: config.height,
+                type,
+                config,
+                obstacleType: config.type,
+                falling: true
+              };
+            }
+          }
+          // Animate dropped obstacle
+          if (next.isDropping && next.dropObstacle) {
+            let drop = { ...next.dropObstacle };
+            drop.y += 6;
+            if (drop.y >= next.dropY) {
+              drop.y = next.dropY;
+              drop.falling = false;
+              // Add to obstacles
+              setGameState(prev2 => ({
+                ...prev2,
+                obstacles: [
+                  ...prev2.obstacles,
+                  { ...drop, x: drop.x, y: drop.y, falling: false }
+                ]
+              }));
+              next.isDropping = false;
+              next.dropObstacle = null;
+              next.hasDropped = false;
+            } else {
+              next.dropObstacle = drop;
+            }
+          }
+          // Remove UFO if off screen (with buffer)
+          if (next.x > window.innerWidth + 120) {
+            next.active = false;
+            next.x = -200; // Move far off screen to prevent immediate reactivation
+            next.isDropping = false;
+            next.dropObstacle = null;
+            next.hasDropped = false;
+          }
+        }
+        return next;
+      });
+
       return {
         ...prev,
         runner: newRunner,
@@ -301,6 +403,26 @@ function App() {
     <div className="w-full h-screen bg-gray-900 relative overflow-hidden select-none">
       {/* Background */}
       <GameBackground backgroundOffset={gameState.backgroundOffset} />
+
+      {/* UFO */}
+      {ufo.active && (
+        <>
+          <div
+            className="absolute z-40 left-0"
+            style={{ left: `${ufo.x + 20}px`, top: `${ufo.y - 28}px`, width: '120px', textAlign: 'center', pointerEvents: 'none' }}
+          >
+            <span className="bg-black bg-opacity-70 text-cyan-200 px-3 py-1 rounded-full text-xs font-bold shadow-lg border border-cyan-400 animate-pulse">
+              BOSS UFO
+            </span>
+          </div>
+          <UFO ufo={ufo} />
+        </>
+      )}
+
+      {/* UFO Dropped Obstacle (falling) */}
+      {ufo.active && ufo.dropObstacle && ufo.dropObstacle.falling && (
+        <Obstacle obstacle={ufo.dropObstacle} />
+      )}
 
       {/* Runner */}
       <Runner runner={gameState.runner} />
