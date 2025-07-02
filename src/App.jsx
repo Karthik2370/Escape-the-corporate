@@ -6,7 +6,6 @@ import Boss from './components/Boss';
 import GameBackground from './components/GameBackground';
 import { 
   GAME_CONFIG, 
-  BOSS_CONFIG,
   generateObstacle, 
   checkCollision, 
   createParticles, 
