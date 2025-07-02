@@ -17,6 +17,9 @@ import {
   getGroundLevel,
   JUMP_OBSTACLES
 } from './utils/gameUtils';
+import StartModal from './components/StartModal';
+import GameOverModal from './components/GameOverModal';
+import PauseModal from './components/PauseModal';
 
 function App() {
   // Initialize with responsive ground level
@@ -62,6 +65,9 @@ function App() {
   const gameLoopRef = useRef();
   const keysRef = useRef(new Set());
   const lastSpeedIncreaseRef = useRef(0);
+
+  // Touch swipe support for mobile
+  const touchStartRef = useRef(null);
 
   // Handle window resize to update ground level
   useEffect(() => {
@@ -109,9 +115,17 @@ function App() {
   // Immediate key handling
   const handleKeyDown = useCallback((event) => {
     const key = event.key.toLowerCase();
+    // Pause/resume with spacebar
+    if (key === ' ') {
+      event.preventDefault();
+      setGameState(prev => ({
+        ...prev,
+        isRunning: !prev.isRunning && !prev.isGameOver ? true : !prev.isRunning ? prev.isRunning : !prev.isRunning ? prev.isRunning : !prev.isRunning
+      }));
+      return;
+    }
     keysRef.current.add(key);
-    
-    if (['arrowup', 'arrowdown', ' '].includes(key)) {
+    if ([ 'arrowup', 'arrowdown' ].includes(key)) {
       event.preventDefault();
     }
   }, []);
@@ -133,7 +147,7 @@ function App() {
       const duckY = groundLevel - GAME_CONFIG.duckHeight;
       
       // IMMEDIATE jump response
-      const jumpPressed = keys.has('arrowup') || keys.has(' ');
+      const jumpPressed = keys.has('arrowup');
       const duckPressed = keys.has('arrowdown');
       
       // Handle jumping - immediate response
@@ -396,8 +410,45 @@ function App() {
     };
   }, [handleKeyDown, handleKeyUp]);
 
+  // Touch swipe support for mobile
+  useEffect(() => {
+    const handleTouchStart = (e) => {
+      if (e.touches.length === 1) {
+        touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+    };
+    const handleTouchEnd = (e) => {
+      if (!touchStartRef.current) return;
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - touchStartRef.current.x;
+      const dy = touch.clientY - touchStartRef.current.y;
+      // Only consider vertical swipes
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 30) {
+        if (dy < 0) {
+          // Swipe up: jump
+          keysRef.current.add('arrowup');
+          setTimeout(() => keysRef.current.delete('arrowup'), 120);
+        } else {
+          // Swipe down: duck (hold for 400ms)
+          keysRef.current.add('arrowdown');
+          setTimeout(() => keysRef.current.delete('arrowdown'), 400);
+        }
+      }
+      touchStartRef.current = null;
+    };
+    window.addEventListener('touchstart', handleTouchStart, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd, { passive: false });
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
+
   // Calculate game time in seconds
   const gameTimeSeconds = Math.floor(gameState.gameTime / 60);
+
+  // Show PauseModal if paused (not running, not game over, not start)
+  const showPauseModal = !gameState.isRunning && !gameState.isGameOver && gameState.score > 0;
 
   return (
     <div className="w-full h-screen bg-gray-900 relative overflow-hidden select-none">
@@ -495,112 +546,24 @@ function App() {
         )}
 
         {/* Start Screen */}
-        {!gameState.isRunning && !gameState.isGameOver && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 pointer-events-auto transition-all duration-300">
-            <div
-              className="relative rounded-3xl shadow-2xl text-center max-w-md w-full min-w-[320px] border border-blue-200/40 backdrop-blur-xl bg-white/60 dark:bg-gray-900/60 overflow-hidden animate-fadeIn"
-              style={{ maxHeight: '90vh', overflowY: 'auto' }}
-            >
-              {/* Top Accent Bar */}
-              <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500/80 to-purple-500/80 h-14 w-full shadow-md">
-                <span className="text-3xl">🏃‍♂️</span>
-                <span className="text-2xl animate-bounce">💼</span>
-              </div>
-              {/* Title */}
-              <div className="py-4 px-6">
-                <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent mb-1 tracking-tight drop-shadow-sm">
-                  Corporate Stress
-                </h1>
-                <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Runner</h2>
-                <p className="text-gray-500 dark:text-gray-300 text-base mb-4">Escape the office chaos!</p>
-                {/* Quick Instructions */}
-                <div className="bg-gradient-to-r from-blue-50/80 to-purple-50/80 rounded-2xl p-4 mb-4 border border-blue-100/60 shadow-sm">
-                  <div className="grid grid-cols-2 gap-2 text-center">
-                    <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-2 shadow-sm">
-                      <div className="text-xl mb-1">⬆️</div>
-                      <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">Jump</div>
-                      <div className="text-xs text-gray-500">Over obstacles</div>
-                    </div>
-                    <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-2 shadow-sm">
-                      <div className="text-xl mb-1">⬇️</div>
-                      <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">Duck</div>
-                      <div className="text-xs text-gray-500">Under threats</div>
-                    </div>
-                  </div>
-                  <div className="mt-2 bg-red-50/80 dark:bg-red-900/40 rounded-xl p-2 border border-red-100/60">
-                    <div className="text-red-600 font-bold text-xs mb-1">👹 Boss Battles!</div>
-                    <div className="text-red-500 text-xs">Duck bullets, then touch to destroy!</div>
-                  </div>
-                </div>
-                {/* High Score Display */}
-                {gameState.highScore > 0 && (
-                  <div className="bg-yellow-50/80 dark:bg-yellow-900/40 rounded-xl p-2 mb-4 border border-yellow-200/60 shadow-sm">
-                    <div className="flex items-center justify-center gap-2">
-                      <Trophy className="text-yellow-500" size={16} />
-                      <span className="text-yellow-700 dark:text-yellow-200 font-bold text-sm">Best Score: {gameState.highScore}</span>
-                    </div>
-                  </div>
-                )}
-                {/* Start Button */}
-                <button
-                  onClick={startGame}
-                  className="mt-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-2xl flex items-center gap-2 mx-auto transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-400"
-                >
-                  <Play size={20} />
-                  <span>Start Running!</span>
-                </button>
-              </div>
-            </div>
-          </div>
+        {!gameState.isRunning && !gameState.isGameOver && gameState.score === 0 && (
+          <StartModal highScore={gameState.highScore} onStart={startGame} />
+        )}
+
+        {/* Pause Modal */}
+        {showPauseModal && (
+          <PauseModal onResume={startGame} />
         )}
 
         {/* Game Over Screen */}
         {gameState.isGameOver && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 pointer-events-auto transition-all duration-300">
-            <div
-              className="relative rounded-2xl shadow-2xl text-center max-w-sm w-full border border-red-200/40 backdrop-blur-xl bg-white/60 dark:bg-gray-900/60 overflow-hidden animate-fadeIn"
-              style={{ maxHeight: '90vh', overflowY: 'auto' }}
-            >
-              {/* Top Accent Bar */}
-              <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-red-500/80 to-orange-500/80 h-12 w-full shadow-md">
-                <span className="text-2xl">💥</span>
-              </div>
-              <div className="py-4 px-6">
-                <h1 className="text-2xl font-extrabold text-gray-800 dark:text-gray-100 mb-1 tracking-tight drop-shadow-sm">Game Over!</h1>
-                <p className="text-base text-gray-600 dark:text-gray-300 mb-2">Corporate stress got you!</p>
-                <div className="bg-gray-100/80 dark:bg-gray-800/80 rounded-lg p-3 mb-4 border border-gray-200/60 shadow-sm">
-                  <div className="grid grid-cols-2 gap-2 text-center">
-                    <div>
-                      <div className="text-xl font-bold text-blue-600">{gameState.score}</div>
-                      <div className="text-xs text-gray-600">Final Score</div>
-                    </div>
-                    <div>
-                      <div className="text-xl font-bold text-green-600">{gameTimeSeconds}s</div>
-                      <div className="text-xs text-gray-600">Survival Time</div>
-                    </div>
-                    <div>
-                      <div className="text-xl font-bold text-purple-600">{gameState.speed.toFixed(1)}x</div>
-                      <div className="text-xs text-gray-600">Max Speed</div>
-                    </div>
-                    <div>
-                      <div className="text-xl font-bold text-orange-600">{Math.floor(gameState.score / 200)}</div>
-                      <div className="text-xs text-gray-600">Speed Levels</div>
-                    </div>
-                  </div>
-                  {gameState.score === gameState.highScore && gameState.score > 0 && (
-                    <div className="text-xs text-yellow-600 font-bold mt-2 animate-pulse">🎉 New High Score!</div>
-                  )}
-                </div>
-                <button
-                  onClick={startGame}
-                  className="mt-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 mx-auto transition-colors text-base focus:outline-none focus:ring-2 focus:ring-green-400"
-                >
-                  <RotateCcw size={16} />
-                  Try Again
-                </button>
-              </div>
-            </div>
-          </div>
+          <GameOverModal
+            score={gameState.score}
+            highScore={gameState.highScore}
+            gameTimeSeconds={gameTimeSeconds}
+            speed={gameState.speed}
+            onRestart={startGame}
+          />
         )}
       </div>
     </div>
