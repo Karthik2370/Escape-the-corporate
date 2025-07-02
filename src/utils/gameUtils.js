@@ -16,111 +16,156 @@ export const getGroundLevel = () => {
 };
 
 export const JUMP_OBSTACLES = {
-  meeting: { 
-    width: 70, 
-    height: 85, 
-    color: '#FF4757', 
-    icon: '👥', 
+  meeting: {
+    width: 80,
+    height: 90,
+    color: '#FF4757',
+    icon: '👥',
     title: 'MEETING',
     shadow: '#FF3742',
     glow: 'rgba(255, 71, 87, 0.4)',
     priority: 'high',
-    type: 'jump'
+    type: 'jump',
+    shape: 'rect'
   },
-  email: { 
-    width: 60, 
-    height: 75, 
-    color: '#2ED573', 
-    icon: '📧', 
-    title: 'EMAIL',
-    shadow: '#26C65F',
-    glow: 'rgba(46, 213, 115, 0.4)',
-    priority: 'medium',
-    type: 'jump'
-  },
-  deadline: { 
-    width: 75, 
-    height: 80, 
-    color: '#FF6348', 
-    icon: '⏰', 
+  deadline: {
+    width: 75,
+    height: 80,
+    color: '#FF6348',
+    icon: '⏰',
     title: 'DEADLINE',
     shadow: '#FF4F37',
     glow: 'rgba(255, 99, 72, 0.4)',
     priority: 'critical',
-    type: 'jump'
+    type: 'jump',
+    shape: 'rect'
   },
-  boss: { 
-    width: 80, 
-    height: 95, 
-    color: '#8E44AD', 
-    icon: '👨‍💼', 
-    title: 'BOSS',
+  timesheet: {
+    width: 70,
+    height: 75,
+    color: '#1E90FF',
+    icon: '📝',
+    title: 'TIMESHEET',
+    shadow: '#187bcd',
+    glow: 'rgba(30, 144, 255, 0.4)',
+    priority: 'medium',
+    type: 'jump',
+    shape: 'rect'
+  },
+  production: {
+    width: 90,
+    height: 85,
+    color: '#2ED573',
+    icon: '💻',
+    title: 'PRODUCTION',
+    shadow: '#26C65F',
+    glow: 'rgba(46, 213, 115, 0.4)',
+    priority: 'high',
+    type: 'jump',
+    shape: 'rect'
+  },
+  manager: {
+    width: 80,
+    height: 95,
+    color: '#8E44AD',
+    icon: '🧑‍💼',
+    title: 'MANAGER',
     shadow: '#7D3C98',
     glow: 'rgba(142, 68, 173, 0.4)',
     priority: 'critical',
-    type: 'jump'
+    type: 'jump',
+    shape: 'person'
   },
-  printer: { 
-    width: 65, 
-    height: 70, 
-    color: '#34495E', 
-    icon: '🖨️', 
-    title: 'PRINTER',
-    shadow: '#2C3E50',
-    glow: 'rgba(52, 73, 94, 0.4)',
+  teamlead: {
+    width: 70,
+    height: 90,
+    color: '#F39C12',
+    icon: '🧑‍💻',
+    title: 'TEAM LEAD',
+    shadow: '#E67E22',
+    glow: 'rgba(243, 156, 18, 0.4)',
+    priority: 'high',
+    type: 'jump',
+    shape: 'person'
+  },
+  standup: {
+    width: 60,
+    height: 70,
+    color: '#00B894',
+    icon: '🎤',
+    title: 'STANDUP',
+    shadow: '#00997a',
+    glow: 'rgba(0, 184, 148, 0.4)',
     priority: 'medium',
-    type: 'jump'
+    type: 'jump',
+    shape: 'circle'
+  },
+  codereview: {
+    width: 65,
+    height: 75,
+    color: '#636e72',
+    icon: '🔍',
+    title: 'CODE REVIEW',
+    shadow: '#2d3436',
+    glow: 'rgba(99, 110, 114, 0.4)',
+    priority: 'medium',
+    type: 'jump',
+    shape: 'rect'
   }
 };
 
 export const DUCK_OBSTACLES = {
-  drone: { 
-    width: 90, 
-    height: 50, 
-    color: '#E74C3C', 
-    icon: '🚁', 
-    title: 'SURVEILLANCE',
-    shadow: '#C0392B',
-    glow: 'rgba(231, 76, 60, 0.4)',
-    priority: 'high',
-    type: 'duck',
-    yOffset: 80 // Offset from ground level
-  },
-  banner: { 
-    width: 100, 
-    height: 40, 
-    color: '#F39C12', 
-    icon: '🏷️', 
-    title: 'COMPANY BANNER',
-    shadow: '#E67E22',
-    glow: 'rgba(243, 156, 18, 0.4)',
+  hremail: {
+    width: 100,
+    height: 40,
+    color: '#e17055',
+    icon: '📩',
+    title: 'HR EMAIL',
+    shadow: '#d35400',
+    glow: 'rgba(225, 112, 85, 0.4)',
     priority: 'medium',
     type: 'duck',
-    yOffset: 70
+    yOffset: 70,
+    shape: 'banner'
   },
-  camera: { 
-    width: 80, 
-    height: 45, 
-    color: '#9B59B6', 
-    icon: '📹', 
-    title: 'SECURITY CAM',
-    shadow: '#8E44AD',
-    glow: 'rgba(155, 89, 182, 0.4)',
+  allhands: {
+    width: 110,
+    height: 45,
+    color: '#00b894',
+    icon: '📢',
+    title: 'ALL-HANDS',
+    shadow: '#00997a',
+    glow: 'rgba(0, 184, 148, 0.4)',
     priority: 'high',
     type: 'duck',
-    yOffset: 75
+    yOffset: 80,
+    shape: 'banner'
   },
-  wifi: { 
-    width: 85, 
-    height: 35, 
-    color: '#3498DB', 
-    icon: '📶', 
-    title: 'WIFI SIGNAL',
-    shadow: '#2980B9',
-    glow: 'rgba(52, 152, 219, 0.4)',
+  announcement: {
+    width: 90,
+    height: 35,
+    color: '#fdcb6e',
+    icon: '📣',
+    title: 'ANNOUNCEMENT',
+    shadow: '#e1b12c',
+    glow: 'rgba(253, 203, 110, 0.4)',
+    priority: 'medium',
+    type: 'duck',
+    yOffset: 65,
+    shape: 'banner'
+  },
+  feedback: {
+    width: 85,
+    height: 35,
+    color: '#0984e3',
+    icon: '💬',
+    title: 'FEEDBACK',
+    shadow: '#0652dd',
+    glow: 'rgba(9, 132, 227, 0.4)',
     priority: 'low',
     type: 'duck',
-    yOffset: 65
+    yOffset: 60,
+    shape: 'circle'
   }
 };
 
@@ -260,7 +305,7 @@ export const updateBoss = (boss, runnerX) => {
       boss.bullets.push({
         id: Math.random().toString(36).substr(2, 9),
         x: boss.x - 10,
-        y: boss.y + 30, // Head level
+        y: boss.y + boss.height - 24,
         width: 8,
         height: 4,
         velocityX: -8
@@ -330,9 +375,9 @@ export const calculateSpeed = (score) => {
   return Math.min(newSpeed, maxSpeed);
 };
 
-// More conservative obstacle spawn rate to ensure playability
+// Faster initial obstacle spawn rate
 export const getObstacleSpawnRate = (speed) => {
-  const baseRate = 0.012;
+  const baseRate = 0.025; // Increased from 0.012 for faster first obstacles
   const speedMultiplier = 1 + (speed - 1) * 0.3;
   return baseRate * speedMultiplier;
 };

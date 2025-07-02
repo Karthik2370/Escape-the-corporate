@@ -8,21 +8,25 @@ const GameBackground = ({ backgroundOffset }) => {
   // Calculate number of tiles based on screen width
   const screenWidth = window.innerWidth;
   const tileWidth = 80;
-  const numTiles = Math.ceil((screenWidth + 200) / tileWidth) + 5; // Extra tiles for smooth scrolling
+  const numTiles = Math.ceil((screenWidth + tileWidth * 2) / tileWidth); // Ensure full coverage
   
   // Ground tiles that move with background
-  const groundTiles = Array.from({ length: numTiles }, (_, i) => (
-    <div
-      key={i}
-      className="absolute bg-gray-400 border-r border-gray-500"
-      style={{
-        left: `${(i * tileWidth - backgroundOffset) % (screenWidth + 400)}px`,
-        bottom: '0px',
-        width: `${tileWidth}px`,
-        height: `${Math.max(groundHeight, 60)}px` // Minimum 60px height
-      }}
-    />
-  ));
+  const groundTiles = Array.from({ length: numTiles }, (_, i) => {
+    // Calculate seamless tile position
+    const left = ((i * tileWidth - (backgroundOffset % tileWidth)));
+    return (
+      <div
+        key={i}
+        className="absolute bg-gray-400 border-r border-gray-500"
+        style={{
+          left: `${left}px`,
+          bottom: '0px',
+          width: `${tileWidth}px`,
+          height: `${Math.max(groundHeight, 60)}px` // Minimum 60px height
+        }}
+      />
+    );
+  });
 
   // Responsive clouds based on screen size
   const numClouds = Math.max(4, Math.floor(screenWidth / 300));
