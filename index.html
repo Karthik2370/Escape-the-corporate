@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
     <style>
-      /* Prevent mobile scrolling and zooming */
+      /* Prevent mobile scrolling and zooming while keeping touch interactions */
       html, body {
         height: 100%;
         height: 100vh;
@@ -18,11 +18,10 @@
         width: 100%;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: none;
-        touch-action: manipulation;
       }
       
-      /* Prevent text selection and context menu */
-      * {
+      /* Prevent text selection on game elements but allow on interactive elements */
+      .game-area {
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
@@ -31,12 +30,14 @@
         -webkit-tap-highlight-color: transparent;
       }
       
-      /* Allow text selection for buttons and inputs */
-      button, input, select, textarea {
+      /* Ensure buttons and interactive elements are touchable */
+      button, .interactive {
         -webkit-user-select: auto;
         -moz-user-select: auto;
         -ms-user-select: auto;
         user-select: auto;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(0,0,0,0.1);
       }
       
       /* Prevent pull-to-refresh */
@@ -44,18 +45,23 @@
         overscroll-behavior-y: contain;
       }
       
-      /* Ensure modals are clickable */
-      .pointer-events-auto {
+      /* Ensure modals are fully interactive */
+      .modal-content {
         pointer-events: auto !important;
+        touch-action: manipulation !important;
       }
       
-      .pointer-events-auto * {
+      .modal-content * {
         pointer-events: auto !important;
+        touch-action: manipulation !important;
       }
       
-      /* Improve touch targets */
-      .touch-manipulation {
-        touch-action: manipulation;
+      /* Improve touch targets for mobile */
+      @media (max-width: 768px) {
+        button {
+          min-height: 44px;
+          min-width: 44px;
+        }
       }
     </style>
   </head>

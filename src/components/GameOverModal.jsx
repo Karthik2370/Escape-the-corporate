@@ -2,11 +2,8 @@ import React from 'react';
 import { RotateCcw, Trophy, Zap } from 'lucide-react';
 
 const GameOverModal = ({ score, highScore, gameTimeSeconds, speed, difficulty, onRestart }) => (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 pointer-events-auto transition-all duration-300 p-4 z-50">
-    <div
-      className="relative rounded-2xl shadow-2xl text-center w-full max-w-sm border border-red-200/40 backdrop-blur-xl bg-white/90 dark:bg-gray-900/90 overflow-hidden animate-fadeIn"
-      style={{ maxHeight: '95vh', overflowY: 'auto' }}
-    >
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 transition-all duration-300 p-4 z-50">
+    <div className="modal-content relative rounded-2xl shadow-2xl text-center w-full max-w-sm border border-red-200/40 backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 overflow-hidden animate-fadeIn">
       {/* Top Accent Bar */}
       <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-red-500/80 to-orange-500/80 h-12 w-full shadow-md">
         <span className="text-2xl">💥</span>
@@ -39,7 +36,7 @@ const GameOverModal = ({ score, highScore, gameTimeSeconds, speed, difficulty, o
         </div>
         <button
           onClick={onRestart}
-          className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-green-400 touch-manipulation"
+          className="interactive w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-green-400"
         >
           <RotateCcw size={16} />
           Try Again

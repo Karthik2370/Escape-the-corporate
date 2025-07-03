@@ -49,11 +49,8 @@ const StartModal = ({ highScore, onStart }) => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 pointer-events-auto transition-all duration-300 p-2 z-50">
-      <div
-        className="relative rounded-2xl shadow-2xl text-center w-full max-w-sm border border-blue-200/40 backdrop-blur-xl bg-white/90 dark:bg-gray-900/90 overflow-hidden animate-fadeIn"
-        style={{ height: 'fit-content', maxHeight: '98vh' }}
-      >
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 transition-all duration-300 p-2 z-50">
+      <div className="modal-content relative rounded-2xl shadow-2xl text-center w-full max-w-sm border border-blue-200/40 backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 overflow-hidden animate-fadeIn">
         {/* Top Accent Bar */}
         <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500/80 to-purple-500/80 h-8 w-full shadow-md">
           <span className="text-lg">🏃‍♂️</span>
@@ -80,7 +77,7 @@ const StartModal = ({ highScore, onStart }) => {
                     <button
                       key={key}
                       onClick={() => setSelectedTheme(key)}
-                      className={`w-full p-1.5 rounded-lg border transition-all duration-200 text-left ${
+                      className={`interactive w-full p-1.5 rounded-lg border transition-all duration-200 text-left ${
                         isSelected 
                           ? 'border-blue-400 bg-blue-50/80 dark:bg-blue-900/40 shadow-sm' 
                           : 'border-gray-200 bg-white/60 dark:bg-gray-800/60 hover:border-gray-300'
@@ -111,7 +108,7 @@ const StartModal = ({ highScore, onStart }) => {
                     <button
                       key={key}
                       onClick={() => setSelectedDifficulty(key)}
-                      className={`w-full p-1.5 rounded-lg border transition-all duration-200 text-left ${
+                      className={`interactive w-full p-1.5 rounded-lg border transition-all duration-200 text-left ${
                         isSelected 
                           ? 'border-blue-400 bg-blue-50/80 dark:bg-blue-900/40 shadow-sm' 
                           : 'border-gray-200 bg-white/60 dark:bg-gray-800/60 hover:border-gray-300'
@@ -167,7 +164,7 @@ const StartModal = ({ highScore, onStart }) => {
           {/* Start Button */}
           <button
             onClick={handleStart}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation mb-2"
+            className="interactive w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 mb-2"
           >
             <Play size={14} />
             <span>Start Running!</span>

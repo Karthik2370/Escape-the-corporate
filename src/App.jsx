@@ -73,10 +73,13 @@ function App() {
   // Touch swipe support for mobile
   const touchStartRef = useRef(null);
 
-  // Prevent mobile scrolling and zooming
+  // Prevent mobile scrolling and zooming while keeping touch interactions
   useEffect(() => {
-    const preventDefault = (e) => {
-      e.preventDefault();
+    const preventScroll = (e) => {
+      // Only prevent default on the game area, not on modal content
+      if (!e.target.closest('.modal-content')) {
+        e.preventDefault();
+      }
     };
 
     const preventZoom = (e) => {
@@ -85,13 +88,10 @@ function App() {
       }
     };
 
-    // Prevent scrolling and zooming on mobile
+    // Prevent scrolling and zooming on mobile for game area only
     document.addEventListener('touchstart', preventZoom, { passive: false });
-    document.addEventListener('touchmove', preventDefault, { passive: false });
-    document.addEventListener('gesturestart', preventDefault, { passive: false });
-    
-    // Prevent context menu on long press
-    document.addEventListener('contextmenu', preventDefault);
+    document.addEventListener('touchmove', preventScroll, { passive: false });
+    document.addEventListener('gesturestart', preventScroll, { passive: false });
     
     // Set viewport meta for mobile
     const viewport = document.querySelector('meta[name=viewport]');
@@ -101,9 +101,8 @@ function App() {
 
     return () => {
       document.removeEventListener('touchstart', preventZoom);
-      document.removeEventListener('touchmove', preventDefault);
-      document.removeEventListener('gesturestart', preventDefault);
-      document.removeEventListener('contextmenu', preventDefault);
+      document.removeEventListener('touchmove', preventScroll);
+      document.removeEventListener('gesturestart', preventScroll);
     };
   }, []);
 
@@ -495,17 +494,20 @@ function App() {
     };
   }, [handleKeyDown, handleKeyUp]);
 
-  // Touch swipe support for mobile
+  // Touch swipe support for mobile - only for game area
   useEffect(() => {
     const handleTouchStart = (e) => {
-      e.preventDefault(); // Prevent scrolling
+      // Only handle touch on game area, not on modals
+      if (e.target.closest('.modal-content')) return;
+      
       if (e.touches.length === 1) {
         touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
     };
     
     const handleTouchEnd = (e) => {
-      e.preventDefault(); // Prevent scrolling
+      // Only handle touch on game area, not on modals
+      if (e.target.closest('.modal-content')) return;
       if (!touchStartRef.current) return;
       
       const touch = e.changedTouches[0];
@@ -527,8 +529,8 @@ function App() {
       touchStartRef.current = null;
     };
     
-    window.addEventListener('touchstart', handleTouchStart, { passive: false });
-    window.addEventListener('touchend', handleTouchEnd, { passive: false });
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
     
     return () => {
       window.removeEventListener('touchstart', handleTouchStart);
@@ -543,7 +545,7 @@ function App() {
   const showPauseModal = !gameState.isRunning && !gameState.isGameOver && gameState.score > 0;
 
   return (
-    <div className="w-full h-screen bg-gray-900 relative overflow-hidden select-none" style={{ height: '100vh', height: '100dvh' }}>
+    <div className="w-full h-screen bg-gray-900 relative overflow-hidden game-area" style={{ height: '100vh', height: '100dvh' }}>
       {/* Background */}
       <GameBackground backgroundOffset={gameState.backgroundOffset} theme={gameState.theme} />
 
