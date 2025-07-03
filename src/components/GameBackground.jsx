@@ -26,17 +26,17 @@ const GameBackground = ({ backgroundOffset, theme = 'day' }) => {
       groundLine: 'bg-gray-600'
     },
     night: {
-      skyGradient: 'from-indigo-900 via-purple-900 to-indigo-800',
+      skyGradient: 'from-indigo-900 via-purple-900 to-gray-900',
       sunMoon: {
-        color: 'bg-gray-100',
+        color: 'bg-gray-200',
         icon: '🌙',
-        glow: 'shadow-blue-200'
+        glow: 'shadow-blue-300'
       },
       clouds: '☁️',
-      cloudOpacity: 'opacity-30',
-      groundBase: 'bg-gray-700',
-      groundTiles: 'bg-gray-600 border-gray-700',
-      groundLine: 'bg-gray-800'
+      cloudOpacity: 'opacity-20',
+      groundBase: 'bg-gray-800',
+      groundTiles: 'bg-gray-700 border-gray-800',
+      groundLine: 'bg-gray-900'
     }
   };
 
@@ -60,37 +60,47 @@ const GameBackground = ({ backgroundOffset, theme = 'day' }) => {
     );
   });
 
-  // Responsive clouds/stars based on screen size
-  const numElements = Math.max(4, Math.floor(screenWidth / 300));
-  const skyElements = Array.from({ length: numElements }, (_, i) => (
+  // Responsive clouds based on screen size
+  const numClouds = Math.max(3, Math.floor(screenWidth / 400));
+  const clouds = Array.from({ length: numClouds }, (_, i) => (
     <div
       key={i}
       className={`absolute text-white ${currentTheme.cloudOpacity}`}
       style={{
-        left: `${(i * (screenWidth / numElements) - backgroundOffset * 0.3) % (screenWidth + 200)}px`,
-        top: `${Math.max(60, screenHeight * 0.1) + (i % 3) * Math.max(30, screenHeight * 0.05)}px`,
-        fontSize: `${Math.max(24, screenWidth / 50)}px`
+        left: `${(i * (screenWidth / numClouds) - backgroundOffset * 0.2) % (screenWidth + 200)}px`,
+        top: `${Math.max(60, screenHeight * 0.15) + (i % 2) * Math.max(40, screenHeight * 0.1)}px`,
+        fontSize: `${Math.max(32, screenWidth / 40)}px`
       }}
     >
       {currentTheme.clouds}
     </div>
   ));
 
-  // Add stars for night mode
-  const stars = theme === 'night' ? Array.from({ length: 20 }, (_, i) => (
-    <div
-      key={`star-${i}`}
-      className="absolute text-yellow-200 opacity-80 animate-pulse"
-      style={{
-        left: `${(i * 73 + backgroundOffset * 0.1) % (screenWidth + 100)}px`,
-        top: `${Math.max(20, screenHeight * 0.05) + (i % 5) * Math.max(20, screenHeight * 0.08)}px`,
-        fontSize: `${Math.max(8, screenWidth / 100)}px`,
-        animationDelay: `${i * 0.2}s`
-      }}
-    >
-      ⭐
-    </div>
-  )) : [];
+  // Stars for night mode - scattered naturally across the sky
+  const stars = theme === 'night' ? Array.from({ length: 25 }, (_, i) => {
+    // Create more natural star distribution
+    const x = (i * 127 + backgroundOffset * 0.05) % (screenWidth + 100);
+    const y = Math.max(20, screenHeight * 0.05) + (i * 37) % (screenHeight * 0.6);
+    const size = Math.max(6, screenWidth / 120);
+    const brightness = 0.4 + (i % 3) * 0.3; // Varying brightness
+    
+    return (
+      <div
+        key={`star-${i}`}
+        className="absolute text-yellow-100 animate-pulse"
+        style={{
+          left: `${x}px`,
+          top: `${y}px`,
+          fontSize: `${size}px`,
+          opacity: brightness,
+          animationDelay: `${(i * 0.3) % 3}s`,
+          animationDuration: `${2 + (i % 2)}s`
+        }}
+      >
+        ✦
+      </div>
+    );
+  }) : [];
 
   return (
     <div className="absolute inset-0 overflow-hidden">
@@ -104,39 +114,26 @@ const GameBackground = ({ backgroundOffset, theme = 'day' }) => {
       <div 
         className={`absolute ${currentTheme.sunMoon.color} rounded-full ${currentTheme.sunMoon.glow} shadow-lg`}
         style={{ 
-          top: `${Math.max(40, screenHeight * 0.1)}px`, 
+          top: `${Math.max(40, screenHeight * 0.12)}px`, 
           right: `${Math.max(80, screenWidth * 0.08)}px`,
           width: `${Math.max(40, screenWidth / 30)}px`,
           height: `${Math.max(40, screenWidth / 30)}px`
         }}
       >
-        {/* Add moon face for night mode */}
+        {/* Add subtle glow for moon */}
         {theme === 'night' && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-600" style={{ fontSize: '60%' }}>
-            🌙
-          </div>
+          <div 
+            className="absolute inset-0 rounded-full bg-blue-200 opacity-20 animate-pulse"
+            style={{ transform: 'scale(1.5)' }}
+          />
         )}
       </div>
       
-      {/* Sky elements (clouds) - responsive */}
-      {skyElements}
+      {/* Clouds - responsive */}
+      {clouds}
       
-      {/* Stars for night mode */}
+      {/* Stars for night mode - naturally scattered */}
       {stars}
-      
-      {/* Shooting star occasionally for night mode */}
-      {theme === 'night' && Math.random() < 0.001 && (
-        <div 
-          className="absolute text-yellow-300 opacity-80 animate-ping"
-          style={{
-            left: `${Math.random() * screenWidth}px`,
-            top: `${Math.max(30, screenHeight * 0.1)}px`,
-            fontSize: `${Math.max(12, screenWidth / 80)}px`
-          }}
-        >
-          💫
-        </div>
-      )}
       
       {/* Ground base - responsive height */}
       <div 
