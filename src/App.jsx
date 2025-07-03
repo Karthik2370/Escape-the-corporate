@@ -15,7 +15,8 @@ import {
   calculateSpeed,
   getObstacleSpawnRate,
   getGroundLevel,
-  JUMP_OBSTACLES
+  JUMP_OBSTACLES,
+  DIFFICULTY_CONFIGS
 } from './utils/gameUtils';
 import StartModal from './components/StartModal';
 import GameOverModal from './components/GameOverModal';
@@ -34,6 +35,7 @@ function App() {
     score: 0,
     highScore: getHighScore(),
     speed: 1,
+    difficulty: 'normal', // easy, normal, expert
     runner: {
       x: 100,
       y: getInitialGroundLevel() - GAME_CONFIG.runnerHeight,
@@ -49,7 +51,7 @@ function App() {
     lastBossScore: 0
   });
 
-  // UFO state
+  // UFO state with improved logic
   const [ufo, setUfo] = useState({
     active: false,
     x: -100,
@@ -57,10 +59,9 @@ function App() {
     isDropping: false,
     dropY: 0,
     dropObstacle: null,
-    hasDropped: false
+    hasDropped: false,
+    cooldown: 0 // Prevent immediate reactivation
   });
-  const ufoTimerRef = useRef(0);
-  const ufoDropRef = useRef(false);
 
   const gameLoopRef = useRef();
   const keysRef = useRef(new Set());
@@ -68,6 +69,40 @@ function App() {
 
   // Touch swipe support for mobile
   const touchStartRef = useRef(null);
+
+  // Prevent mobile scrolling and zooming
+  useEffect(() => {
+    const preventDefault = (e) => {
+      e.preventDefault();
+    };
+
+    const preventZoom = (e) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    // Prevent scrolling and zooming on mobile
+    document.addEventListener('touchstart', preventZoom, { passive: false });
+    document.addEventListener('touchmove', preventDefault, { passive: false });
+    document.addEventListener('gesturestart', preventDefault, { passive: false });
+    
+    // Prevent context menu on long press
+    document.addEventListener('contextmenu', preventDefault);
+    
+    // Set viewport meta for mobile
+    const viewport = document.querySelector('meta[name=viewport]');
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+    }
+
+    return () => {
+      document.removeEventListener('touchstart', preventZoom);
+      document.removeEventListener('touchmove', preventDefault);
+      document.removeEventListener('gesturestart', preventDefault);
+      document.removeEventListener('contextmenu', preventDefault);
+    };
+  }, []);
 
   // Handle window resize to update ground level
   useEffect(() => {
@@ -86,14 +121,15 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const startGame = useCallback(() => {
+  const startGame = useCallback((difficulty = 'normal') => {
     const groundLevel = getGroundLevel();
     setGameState(prev => ({
       ...prev,
       isRunning: true,
       isGameOver: false,
       score: 0,
-      speed: 1,
+      speed: DIFFICULTY_CONFIGS[difficulty].baseSpeed,
+      difficulty,
       runner: {
         x: 100,
         y: groundLevel - GAME_CONFIG.runnerHeight,
@@ -109,6 +145,19 @@ function App() {
       lastBossScore: 0,
       highScore: getHighScore() // Always refresh high score from localStorage
     }));
+    
+    // Reset UFO state
+    setUfo({
+      active: false,
+      x: -200,
+      y: 60,
+      isDropping: false,
+      dropY: 0,
+      dropObstacle: null,
+      hasDropped: false,
+      cooldown: 0
+    });
+    
     lastSpeedIncreaseRef.current = 0;
   }, []);
 
@@ -178,8 +227,9 @@ function App() {
         }
       }
       
-      // Calculate new speed based on score (slower progression)
-      const newSpeed = calculateSpeed(prev.score);
+      // Calculate new speed based on score and difficulty
+      const difficultyConfig = DIFFICULTY_CONFIGS[prev.difficulty];
+      const newSpeed = calculateSpeed(prev.score, difficultyConfig);
       
       // Check for speed increase notification
       const speedIncreased = newSpeed > prev.speed;
@@ -212,7 +262,7 @@ function App() {
         const minDistance = GAME_CONFIG.minObstacleDistance + (newSpeed - 1) * 20;
         const shouldSpawn = !lastObstacle || (800 - lastObstacle.x > minDistance);
         
-        const spawnRate = getObstacleSpawnRate(newSpeed);
+        const spawnRate = getObstacleSpawnRate(newSpeed, difficultyConfig);
         if (shouldSpawn && Math.random() < spawnRate) {
           const newObstacle = generateObstacle(800 + Math.random() * 100, prev.score, prev.lastBossScore);
           
@@ -251,18 +301,18 @@ function App() {
       }
 
       // Update score (1 point per frame = ~60 points per second)
-      let newScore = prev.score + 1;
+      let newScore = prev.score + difficultyConfig.scoreMultiplier;
       
       // Bonus points for passing obstacles and destroying bosses
       newObstacles.forEach(obstacle => {
         if (!obstacle.passed && obstacle.x + obstacle.width < newRunner.x) {
           obstacle.passed = true;
           if (obstacle.obstacleType === 'boss') {
-            newScore += 100; // Big bonus for defeating boss
+            newScore += 100 * difficultyConfig.scoreMultiplier; // Big bonus for defeating boss
           } else if (obstacle.obstacleType === 'duck') {
-            newScore += 15; // More points for ducking obstacles
+            newScore += 15 * difficultyConfig.scoreMultiplier; // More points for ducking obstacles
           } else {
-            newScore += 10;
+            newScore += 10 * difficultyConfig.scoreMultiplier;
           }
         }
       });
@@ -276,46 +326,68 @@ function App() {
       // Update game time
       const newGameTime = prev.gameTime + 1;
 
-      // UFO logic
+      // Improved UFO logic
       setUfo(ufoPrev => {
         let next = { ...ufoPrev };
-        // Randomly activate UFO only if not active and far off screen
-        if (!ufoPrev.active && next.x <= -100 && Math.random() < 0.002 && !prev.bossActive) {
-          next.active = true;
-          next.x = -100;
-          next.y = 60 + Math.random() * 40;
-          next.isDropping = false;
-          next.dropObstacle = null;
-          next.hasDropped = false;
+        
+        // Decrease cooldown
+        if (next.cooldown > 0) {
+          next.cooldown--;
         }
+        
+        // Only activate UFO if conditions are met
+        if (!ufoPrev.active && next.x <= -100 && next.cooldown <= 0 && !bossActive) {
+          // Check if there's enough clear space for a safe drop
+          const hasEnoughSpace = newObstacles.length === 0 || 
+            newObstacles.every(obs => obs.x > 600 || obs.x < -100);
+          
+          if (hasEnoughSpace && Math.random() < 0.001) { // Reduced spawn rate
+            next.active = true;
+            next.x = -100;
+            next.y = 60 + Math.random() * 40;
+            next.isDropping = false;
+            next.dropObstacle = null;
+            next.hasDropped = false;
+          }
+        }
+        
         // Move UFO if active
         if (next.active) {
           next.x += 1.5;
-          // Only drop once per flyby
-          if (!next.isDropping && !next.hasDropped && next.x > 200 && next.x < window.innerWidth - 200) {
-            // Only drop if area is clear (no obstacles within 120px to the left or right of the drop position)
+          
+          // Only drop once per flyby and ensure safe spacing
+          if (!next.isDropping && !next.hasDropped && next.x > 300 && next.x < window.innerWidth - 300) {
             const dropX = next.x + 24;
-            const dropWidth = 60; // Approximate width of dropped obstacle
-            const safeGap = 120;
-            const clear = !prev.obstacles.some(o => {
+            const dropWidth = 60;
+            const safeGap = 200; // Increased safe gap
+            
+            // Check for clear area around drop zone
+            const clear = !newObstacles.some(o => {
               const oLeft = o.x;
               const oRight = o.x + o.width;
-              const dropLeft = dropX;
-              const dropRight = dropX + dropWidth;
-              // If any obstacle is within safeGap to the left or right of the drop
-              return (
-                (oRight > dropLeft - safeGap && oLeft < dropLeft) ||
-                (oLeft < dropRight + safeGap && oRight > dropRight)
-              );
+              const dropLeft = dropX - safeGap;
+              const dropRight = dropX + dropWidth + safeGap;
+              
+              // Ensure no obstacles within the safe gap
+              return (oRight > dropLeft && oLeft < dropRight);
             });
-            if (clear && Math.random() < 0.02) {
+            
+            // Also check that the last obstacle is far enough
+            const lastObstacle = newObstacles[newObstacles.length - 1];
+            const lastObstacleClear = !lastObstacle || 
+              (lastObstacle.x + lastObstacle.width < dropX - safeGap) ||
+              (lastObstacle.x > dropX + dropWidth + safeGap);
+            
+            if (clear && lastObstacleClear && Math.random() < 0.015) { // Reduced drop chance
               next.isDropping = true;
               next.hasDropped = true;
               next.dropY = getGroundLevel() - 80;
+              
               // Pick a random obstacle to drop (from jump obstacles)
               const keys = Object.keys(JUMP_OBSTACLES);
               const type = keys[Math.floor(Math.random() * keys.length)];
-              const config = { ...JUMP_OBSTACLES[type], title: 'More Fcking Tasks' };
+              const config = { ...JUMP_OBSTACLES[type], title: 'UFO DROP' };
+              
               next.dropObstacle = {
                 id: 'ufo-' + Math.random().toString(36).substr(2, 9),
                 x: next.x + 24,
@@ -329,6 +401,7 @@ function App() {
               };
             }
           }
+          
           // Animate dropped obstacle
           if (next.isDropping && next.dropObstacle) {
             let drop = { ...next.dropObstacle };
@@ -336,6 +409,7 @@ function App() {
             if (drop.y >= next.dropY) {
               drop.y = next.dropY;
               drop.falling = false;
+              
               // Add to obstacles
               setGameState(prev2 => ({
                 ...prev2,
@@ -344,22 +418,25 @@ function App() {
                   { ...drop, x: drop.x, y: drop.y, falling: false }
                 ]
               }));
+              
               next.isDropping = false;
               next.dropObstacle = null;
-              next.hasDropped = false;
             } else {
               next.dropObstacle = drop;
             }
           }
-          // Remove UFO if off screen (with buffer)
+          
+          // Remove UFO if off screen
           if (next.x > window.innerWidth + 120) {
             next.active = false;
-            next.x = -200; // Move far off screen to prevent immediate reactivation
+            next.x = -200;
             next.isDropping = false;
             next.dropObstacle = null;
             next.hasDropped = false;
+            next.cooldown = 1800; // 30 second cooldown at 60fps
           }
         }
+        
         return next;
       });
 
@@ -367,7 +444,7 @@ function App() {
         ...prev,
         runner: newRunner,
         obstacles: newObstacles,
-        score: newScore,
+        score: Math.floor(newScore),
         speed: newSpeed,
         particles: newParticles,
         backgroundOffset: newBackgroundOffset,
@@ -413,15 +490,20 @@ function App() {
   // Touch swipe support for mobile
   useEffect(() => {
     const handleTouchStart = (e) => {
+      e.preventDefault(); // Prevent scrolling
       if (e.touches.length === 1) {
         touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
     };
+    
     const handleTouchEnd = (e) => {
+      e.preventDefault(); // Prevent scrolling
       if (!touchStartRef.current) return;
+      
       const touch = e.changedTouches[0];
       const dx = touch.clientX - touchStartRef.current.x;
       const dy = touch.clientY - touchStartRef.current.y;
+      
       // Only consider vertical swipes
       if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 30) {
         if (dy < 0) {
@@ -436,8 +518,10 @@ function App() {
       }
       touchStartRef.current = null;
     };
+    
     window.addEventListener('touchstart', handleTouchStart, { passive: false });
     window.addEventListener('touchend', handleTouchEnd, { passive: false });
+    
     return () => {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchend', handleTouchEnd);
@@ -451,7 +535,7 @@ function App() {
   const showPauseModal = !gameState.isRunning && !gameState.isGameOver && gameState.score > 0;
 
   return (
-    <div className="w-full h-screen bg-gray-900 relative overflow-hidden select-none">
+    <div className="w-full h-screen bg-gray-900 relative overflow-hidden select-none" style={{ height: '100vh', height: '100dvh' }}>
       {/* Background */}
       <GameBackground backgroundOffset={gameState.backgroundOffset} />
 
@@ -507,39 +591,47 @@ function App() {
       {/* UI */}
       <div className="absolute inset-0 pointer-events-none z-40">
         {/* Score Display */}
-        <div className="absolute top-4 left-4 bg-white bg-opacity-90 rounded-lg p-4 shadow-lg pointer-events-auto">
-          <div className="flex items-center gap-4">
+        <div className="absolute top-2 left-2 bg-white bg-opacity-90 rounded-lg p-2 shadow-lg pointer-events-auto text-xs sm:text-sm">
+          <div className="flex items-center gap-2 sm:gap-4">
             <div className="text-center">
-              <div className="text-sm text-gray-600">Score</div>
-              <div className="text-2xl font-bold text-gray-800">{gameState.score}</div>
+              <div className="text-xs text-gray-600">Score</div>
+              <div className="text-lg sm:text-2xl font-bold text-gray-800">{gameState.score}</div>
             </div>
             <div className="text-center">
-              <div className="text-sm text-gray-600 flex items-center gap-1">
-                <Trophy size={14} className="text-yellow-500" />
+              <div className="text-xs text-gray-600 flex items-center gap-1">
+                <Trophy size={12} className="text-yellow-500" />
                 Best
               </div>
-              <div className="text-xl font-bold text-yellow-600">{gameState.highScore}</div>
+              <div className="text-sm sm:text-xl font-bold text-yellow-600">{gameState.highScore}</div>
             </div>
             <div className="text-center">
-              <div className="text-sm text-gray-600 flex items-center gap-1">
-                <Zap size={14} className="text-blue-500" />
+              <div className="text-xs text-gray-600 flex items-center gap-1">
+                <Zap size={12} className="text-blue-500" />
                 Speed
               </div>
-              <div className="text-xl font-bold text-blue-600">{gameState.speed.toFixed(1)}x</div>
+              <div className="text-sm sm:text-xl font-bold text-blue-600">{gameState.speed.toFixed(1)}x</div>
             </div>
             {gameState.isRunning && (
               <div className="text-center">
-                <div className="text-sm text-gray-600">Time</div>
-                <div className="text-xl font-bold text-green-600">{gameTimeSeconds}s</div>
+                <div className="text-xs text-gray-600">Time</div>
+                <div className="text-sm sm:text-xl font-bold text-green-600">{gameTimeSeconds}s</div>
               </div>
             )}
           </div>
         </div>
 
+        {/* Difficulty indicator */}
+        {gameState.isRunning && (
+          <div className="absolute top-2 right-2 bg-white bg-opacity-90 rounded-lg p-2 shadow-lg pointer-events-auto">
+            <div className="text-xs text-gray-600">Difficulty</div>
+            <div className="text-sm font-bold capitalize text-purple-600">{gameState.difficulty}</div>
+          </div>
+        )}
+
         {/* Boss Warning */}
         {gameState.bossActive && (
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <div className="bg-red-600 text-white px-6 py-3 rounded-lg font-bold text-xl animate-pulse border-4 border-red-400">
+            <div className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm sm:text-xl animate-pulse border-4 border-red-400">
               🔥 BOSS BATTLE! DUCK THE BULLETS! 🔥
             </div>
           </div>
@@ -552,7 +644,7 @@ function App() {
 
         {/* Pause Modal */}
         {showPauseModal && (
-          <PauseModal onResume={startGame} />
+          <PauseModal onResume={() => startGame(gameState.difficulty)} />
         )}
 
         {/* Game Over Screen */}
@@ -562,7 +654,8 @@ function App() {
             highScore={gameState.highScore}
             gameTimeSeconds={gameTimeSeconds}
             speed={gameState.speed}
-            onRestart={startGame}
+            difficulty={gameState.difficulty}
+            onRestart={() => startGame(gameState.difficulty)}
           />
         )}
       </div>

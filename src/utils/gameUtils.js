@@ -10,6 +10,34 @@ export const GAME_CONFIG = {
   runnerHeight: 60
 };
 
+// Difficulty configurations
+export const DIFFICULTY_CONFIGS = {
+  easy: {
+    baseSpeed: 0.8,
+    speedIncrement: 0.05,
+    maxSpeed: 2.0,
+    scoreMultiplier: 1,
+    obstacleSpawnRate: 0.8,
+    speedIncreaseInterval: 300 // Every 300 points
+  },
+  normal: {
+    baseSpeed: 1.0,
+    speedIncrement: 0.1,
+    maxSpeed: 2.5,
+    scoreMultiplier: 1,
+    obstacleSpawnRate: 1.0,
+    speedIncreaseInterval: 200 // Every 200 points
+  },
+  expert: {
+    baseSpeed: 1.2,
+    speedIncrement: 0.15,
+    maxSpeed: 3.5,
+    scoreMultiplier: 1.5,
+    obstacleSpawnRate: 1.3,
+    speedIncreaseInterval: 150 // Every 150 points
+  }
+};
+
 // Function to get responsive ground level based on screen height
 export const getGroundLevel = () => {
   return window.innerHeight * (GAME_CONFIG.groundLevelPercent / 100);
@@ -362,22 +390,20 @@ export const updateParticles = (particles) => {
     .filter(particle => particle.life > 0);
 };
 
-// Slower, more balanced speed progression - increases every 15 seconds
-export const calculateSpeed = (score) => {
-  const baseSpeed = 1;
-  const speedIncrement = 0.1;
-  const maxSpeed = 2.5;
+// Speed progression based on difficulty
+export const calculateSpeed = (score, difficultyConfig) => {
+  const { baseSpeed, speedIncrement, maxSpeed, speedIncreaseInterval } = difficultyConfig;
   
-  // Increase speed every 200 points (roughly every 15 seconds at 60fps)
-  const speedLevel = Math.floor(score / 200);
+  // Increase speed based on difficulty interval
+  const speedLevel = Math.floor(score / speedIncreaseInterval);
   const newSpeed = baseSpeed + (speedLevel * speedIncrement);
   
   return Math.min(newSpeed, maxSpeed);
 };
 
-// Faster initial obstacle spawn rate
-export const getObstacleSpawnRate = (speed) => {
-  const baseRate = 0.025; // Increased from 0.012 for faster first obstacles
+// Obstacle spawn rate based on difficulty
+export const getObstacleSpawnRate = (speed, difficultyConfig) => {
+  const baseRate = 0.025 * difficultyConfig.obstacleSpawnRate;
   const speedMultiplier = 1 + (speed - 1) * 0.3;
   return baseRate * speedMultiplier;
 };
