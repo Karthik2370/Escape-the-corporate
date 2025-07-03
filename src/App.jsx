@@ -38,6 +38,7 @@ function App() {
     highScore: getHighScore(),
     speed: 1,
     difficulty: 'normal', // easy, normal, expert
+    theme: 'day', // day, night
     runner: {
       x: 100,
       y: getInitialGroundLevel() - GAME_CONFIG.runnerHeight,
@@ -123,7 +124,7 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const startGame = useCallback((difficulty = 'normal') => {
+  const startGame = useCallback((difficulty = 'normal', theme = 'day') => {
     const groundLevel = getGroundLevel();
     setGameState(prev => ({
       ...prev,
@@ -132,6 +133,7 @@ function App() {
       score: 0,
       speed: DIFFICULTY_CONFIGS[difficulty].baseSpeed,
       difficulty,
+      theme,
       runner: {
         x: 100,
         y: groundLevel - GAME_CONFIG.runnerHeight,
@@ -543,7 +545,7 @@ function App() {
   return (
     <div className="w-full h-screen bg-gray-900 relative overflow-hidden select-none" style={{ height: '100vh', height: '100dvh' }}>
       {/* Background */}
-      <GameBackground backgroundOffset={gameState.backgroundOffset} />
+      <GameBackground backgroundOffset={gameState.backgroundOffset} theme={gameState.theme} />
 
       {/* UFO */}
       {ufo.active && (
@@ -650,7 +652,7 @@ function App() {
 
         {/* Pause Modal */}
         {showPauseModal && (
-          <PauseModal onResume={() => startGame(gameState.difficulty)} />
+          <PauseModal onResume={() => startGame(gameState.difficulty, gameState.theme)} />
         )}
 
         {/* Game Over Screen */}
@@ -661,7 +663,7 @@ function App() {
             gameTimeSeconds={gameTimeSeconds}
             speed={gameState.speed}
             difficulty={gameState.difficulty}
-            onRestart={() => startGame(gameState.difficulty)}
+            onRestart={() => startGame(gameState.difficulty, gameState.theme)}
           />
         )}
       </div>

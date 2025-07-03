@@ -2,9 +2,9 @@ import React from 'react';
 import { RotateCcw, Trophy, Zap } from 'lucide-react';
 
 const GameOverModal = ({ score, highScore, gameTimeSeconds, speed, difficulty, onRestart }) => (
-  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 pointer-events-auto transition-all duration-300 p-4">
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 pointer-events-auto transition-all duration-300 p-4 z-50">
     <div
-      className="relative rounded-2xl shadow-2xl text-center w-full max-w-sm border border-red-200/40 backdrop-blur-xl bg-white/60 dark:bg-gray-900/60 overflow-hidden animate-fadeIn"
+      className="relative rounded-2xl shadow-2xl text-center w-full max-w-sm border border-red-200/40 backdrop-blur-xl bg-white/90 dark:bg-gray-900/90 overflow-hidden animate-fadeIn"
       style={{ maxHeight: '95vh', overflowY: 'auto' }}
     >
       {/* Top Accent Bar */}
@@ -13,24 +13,24 @@ const GameOverModal = ({ score, highScore, gameTimeSeconds, speed, difficulty, o
       </div>
       <div className="py-3 sm:py-4 px-4 sm:px-6">
         <h1 className="text-xl sm:text-2xl font-extrabold text-gray-800 dark:text-gray-100 mb-1 tracking-tight drop-shadow-sm">Game Over!</h1>
-        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-2">Corporate stress got you!</p>
+        <p className="text-sm sm:text-base text-gray-700 dark:text-gray-200 mb-2">Corporate stress got you!</p>
         <div className="bg-gray-100/80 dark:bg-gray-800/80 rounded-lg p-3 mb-4 border border-gray-200/60 shadow-sm">
           <div className="grid grid-cols-2 gap-2 text-center">
             <div>
               <div className="text-lg sm:text-xl font-bold text-blue-600">{score}</div>
-              <div className="text-xs text-gray-600">Final Score</div>
+              <div className="text-xs text-gray-700 dark:text-gray-300">Final Score</div>
             </div>
             <div>
               <div className="text-lg sm:text-xl font-bold text-green-600">{gameTimeSeconds}s</div>
-              <div className="text-xs text-gray-600">Survival Time</div>
+              <div className="text-xs text-gray-700 dark:text-gray-300">Survival Time</div>
             </div>
             <div>
               <div className="text-lg sm:text-xl font-bold text-purple-600">{speed.toFixed(1)}x</div>
-              <div className="text-xs text-gray-600">Max Speed</div>
+              <div className="text-xs text-gray-700 dark:text-gray-300">Max Speed</div>
             </div>
             <div>
               <div className="text-lg sm:text-xl font-bold text-orange-600 capitalize">{difficulty}</div>
-              <div className="text-xs text-gray-600">Difficulty</div>
+              <div className="text-xs text-gray-700 dark:text-gray-300">Difficulty</div>
             </div>
           </div>
           {score === highScore && score > 0 && (
@@ -39,7 +39,7 @@ const GameOverModal = ({ score, highScore, gameTimeSeconds, speed, difficulty, o
         </div>
         <button
           onClick={onRestart}
-          className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-green-400"
+          className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-green-400 touch-manipulation"
         >
           <RotateCcw size={16} />
           Try Again

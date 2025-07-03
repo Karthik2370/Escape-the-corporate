@@ -31,9 +31,31 @@
         -webkit-tap-highlight-color: transparent;
       }
       
+      /* Allow text selection for buttons and inputs */
+      button, input, select, textarea {
+        -webkit-user-select: auto;
+        -moz-user-select: auto;
+        -ms-user-select: auto;
+        user-select: auto;
+      }
+      
       /* Prevent pull-to-refresh */
       body {
         overscroll-behavior-y: contain;
+      }
+      
+      /* Ensure modals are clickable */
+      .pointer-events-auto {
+        pointer-events: auto !important;
+      }
+      
+      .pointer-events-auto * {
+        pointer-events: auto !important;
+      }
+      
+      /* Improve touch targets */
+      .touch-manipulation {
+        touch-action: manipulation;
       }
     </style>
   </head>
