@@ -16,7 +16,9 @@ import {
   getObstacleSpawnRate,
   getGroundLevel,
   JUMP_OBSTACLES,
-  DIFFICULTY_CONFIGS
+  DIFFICULTY_CONFIGS,
+  getJumpForce,
+  getGravity
 } from './utils/gameUtils';
 import StartModal from './components/StartModal';
 import GameOverModal from './components/GameOverModal';
@@ -195,14 +197,18 @@ function App() {
       const groundY = groundLevel - GAME_CONFIG.runnerHeight;
       const duckY = groundLevel - GAME_CONFIG.duckHeight;
       
+      // Get difficulty-adjusted physics
+      const jumpForce = getJumpForce(prev.difficulty);
+      const gravity = getGravity(prev.difficulty);
+      
       // IMMEDIATE jump response
       const jumpPressed = keys.has('arrowup');
       const duckPressed = keys.has('arrowdown');
       
-      // Handle jumping - immediate response
+      // Handle jumping - immediate response with difficulty-adjusted force
       if (jumpPressed && !newRunner.isJumping && !newRunner.isDucking) {
         newRunner.isJumping = true;
-        newRunner.velocityY = GAME_CONFIG.jumpForce;
+        newRunner.velocityY = jumpForce; // Use difficulty-adjusted jump force
       }
       
       // Handle ducking - immediate response (hold to duck)
@@ -214,9 +220,9 @@ function App() {
         newRunner.y = groundY;
       }
       
-      // Apply jump physics
+      // Apply jump physics with difficulty-adjusted gravity
       if (newRunner.isJumping) {
-        newRunner.velocityY += GAME_CONFIG.gravity;
+        newRunner.velocityY += gravity; // Use difficulty-adjusted gravity
         newRunner.y += newRunner.velocityY;
         
         // Land when hitting ground

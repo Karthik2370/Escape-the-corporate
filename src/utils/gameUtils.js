@@ -1,6 +1,6 @@
 export const GAME_CONFIG = {
   gravity: 0.8,
-  jumpForce: -18, // Increased from -16 for higher jumps
+  jumpForce: -18, // Base jump force
   runnerSpeed: 4,
   groundLevelPercent: 75, // Ground at 75% of screen height
   minObstacleDistance: 300,
@@ -18,7 +18,9 @@ export const DIFFICULTY_CONFIGS = {
     maxSpeed: 2.0,
     scoreMultiplier: 1,
     obstacleSpawnRate: 0.8,
-    speedIncreaseInterval: 300 // Every 300 points
+    speedIncreaseInterval: 300, // Every 300 points
+    jumpForceMultiplier: 1.3, // 30% stronger jump for easier clearing
+    gravityMultiplier: 0.85 // 15% less gravity for longer hang time
   },
   normal: {
     baseSpeed: 1.0,
@@ -26,7 +28,9 @@ export const DIFFICULTY_CONFIGS = {
     maxSpeed: 2.5,
     scoreMultiplier: 1,
     obstacleSpawnRate: 1.0,
-    speedIncreaseInterval: 200 // Every 200 points
+    speedIncreaseInterval: 200, // Every 200 points
+    jumpForceMultiplier: 1.0, // Standard jump
+    gravityMultiplier: 1.0 // Standard gravity
   },
   expert: {
     baseSpeed: 1.2,
@@ -34,13 +38,27 @@ export const DIFFICULTY_CONFIGS = {
     maxSpeed: 3.5,
     scoreMultiplier: 1.5,
     obstacleSpawnRate: 1.3,
-    speedIncreaseInterval: 150 // Every 150 points
+    speedIncreaseInterval: 150, // Every 150 points
+    jumpForceMultiplier: 0.9, // 10% weaker jump for more challenge
+    gravityMultiplier: 1.15 // 15% more gravity for faster fall
   }
 };
 
 // Function to get responsive ground level based on screen height
 export const getGroundLevel = () => {
   return window.innerHeight * (GAME_CONFIG.groundLevelPercent / 100);
+};
+
+// Get difficulty-adjusted jump force
+export const getJumpForce = (difficulty) => {
+  const config = DIFFICULTY_CONFIGS[difficulty] || DIFFICULTY_CONFIGS.normal;
+  return GAME_CONFIG.jumpForce * config.jumpForceMultiplier;
+};
+
+// Get difficulty-adjusted gravity
+export const getGravity = (difficulty) => {
+  const config = DIFFICULTY_CONFIGS[difficulty] || DIFFICULTY_CONFIGS.normal;
+  return GAME_CONFIG.gravity * config.gravityMultiplier;
 };
 
 export const JUMP_OBSTACLES = {
