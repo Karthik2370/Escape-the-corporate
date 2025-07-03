@@ -19,8 +19,8 @@ export const DIFFICULTY_CONFIGS = {
     scoreMultiplier: 1,
     obstacleSpawnRate: 0.8,
     speedIncreaseInterval: 300, // Every 300 points
-    jumpForceMultiplier: 1.3, // 30% stronger jump for easier clearing
-    gravityMultiplier: 0.85 // 15% less gravity for longer hang time
+    jumpForceMultiplier: 1.15, // Reduced from 1.3 to 1.15 - less height but still good distance
+    gravityMultiplier: 0.9 // Reduced from 0.85 to 0.9 - less hang time but still easier
   },
   normal: {
     baseSpeed: 1.0,
