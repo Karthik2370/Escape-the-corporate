@@ -1,7 +1,7 @@
 import React from 'react';
 import { RotateCcw, Trophy, Zap } from 'lucide-react';
 
-const GameOverModal = ({ score, highScore, gameTimeSeconds, speed, difficulty, onRestart }) => (
+const GameOverModal = ({ score, highScore, gameTimeSeconds, speed, difficulty, onRestart, onBackToMenu }) => (
   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 transition-all duration-300 p-4 z-50">
     <div className="modal-content relative rounded-2xl shadow-2xl text-center w-full max-w-sm border border-red-200/40 backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 overflow-hidden animate-fadeIn">
       {/* Top Accent Bar */}
@@ -36,10 +36,16 @@ const GameOverModal = ({ score, highScore, gameTimeSeconds, speed, difficulty, o
         </div>
         <button
           onClick={onRestart}
-          className="interactive w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-green-400"
+          className="interactive w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-green-400 mb-2"
         >
           <RotateCcw size={16} />
           Try Again
+        </button>
+        <button
+          onClick={onBackToMenu}
+          className="interactive w-full bg-gradient-to-r from-gray-700 to-gray-500 hover:from-gray-800 hover:to-gray-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-gray-400"
+        >
+          Back to Menu
         </button>
       </div>
     </div>

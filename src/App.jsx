@@ -66,6 +66,9 @@ function App() {
     cooldown: 0 // Prevent immediate reactivation
   });
 
+  // Add state to control showing Start Modal after game over
+  const [showStartMenu, setShowStartMenu] = useState(false);
+
   const gameLoopRef = useRef();
   const keysRef = useRef(new Set());
   const lastSpeedIncreaseRef = useRef(0);
@@ -267,11 +270,11 @@ function App() {
       if (!bossActive) {
         const lastObstacle = newObstacles[newObstacles.length - 1];
         const minDistance = GAME_CONFIG.minObstacleDistance + (newSpeed - 1) * 20;
-        const shouldSpawn = !lastObstacle || (800 - lastObstacle.x > minDistance);
+        const shouldSpawn = !lastObstacle || (window.innerWidth - lastObstacle.x > minDistance);
         
         const spawnRate = getObstacleSpawnRate(newSpeed, difficultyConfig);
         if (shouldSpawn && Math.random() < spawnRate) {
-          const newObstacle = generateObstacle(800 + Math.random() * 100, prev.score, prev.lastBossScore);
+          const newObstacle = generateObstacle(window.innerWidth + Math.random() * 100, prev.score, prev.lastBossScore);
           
           // If a boss was spawned, update the last boss score
           if (newObstacle.obstacleType === 'boss') {
@@ -368,6 +371,9 @@ function App() {
             const dropWidth = 60;
             const safeGap = 200; // Increased safe gap
             
+            // Ensure UFO does not drop too close to the right edge
+            if (window.innerWidth - dropX < 200) return next;
+
             // Check for clear area around drop zone
             const clear = !newObstacles.some(o => {
               const oLeft = o.x;
@@ -538,6 +544,19 @@ function App() {
     };
   }, []);
 
+  // Add Enter key support for Game Over Modal
+  useEffect(() => {
+    if (!gameState.isGameOver || showStartMenu) return;
+    const handleEnter = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        startGame(gameState.difficulty, gameState.theme);
+      }
+    };
+    window.addEventListener('keydown', handleEnter);
+    return () => window.removeEventListener('keydown', handleEnter);
+  }, [gameState.isGameOver, gameState.difficulty, gameState.theme, startGame, showStartMenu]);
+
   // Calculate game time in seconds
   const gameTimeSeconds = Math.floor(gameState.gameTime / 60);
 
@@ -545,7 +564,7 @@ function App() {
   const showPauseModal = !gameState.isRunning && !gameState.isGameOver && gameState.score > 0;
 
   return (
-    <div className="w-full h-screen bg-gray-900 relative overflow-hidden game-area" style={{ height: '100vh', height: '100dvh' }}>
+    <div className="w-full h-screen bg-gray-900 relative overflow-hidden game-area" style={{ height: '100dvh' }}>
       {/* Background */}
       <GameBackground backgroundOffset={gameState.backgroundOffset} theme={gameState.theme} />
 
@@ -648,8 +667,11 @@ function App() {
         )}
 
         {/* Start Screen */}
-        {!gameState.isRunning && !gameState.isGameOver && gameState.score === 0 && (
-          <StartModal highScore={gameState.highScore} onStart={startGame} />
+        {(showStartMenu || (!gameState.isRunning && !gameState.isGameOver && gameState.score === 0)) && (
+          <StartModal highScore={gameState.highScore} onStart={(difficulty, theme) => {
+            setShowStartMenu(false);
+            startGame(difficulty, theme);
+          }} />
         )}
 
         {/* Pause Modal */}
@@ -658,7 +680,7 @@ function App() {
         )}
 
         {/* Game Over Screen */}
-        {gameState.isGameOver && (
+        {gameState.isGameOver && !showStartMenu && (
           <GameOverModal
             score={gameState.score}
             highScore={gameState.highScore}
@@ -666,6 +688,21 @@ function App() {
             speed={gameState.speed}
             difficulty={gameState.difficulty}
             onRestart={() => startGame(gameState.difficulty, gameState.theme)}
+            onBackToMenu={() => {
+              setShowStartMenu(true);
+              setGameState(prev => ({
+                ...prev,
+                isRunning: false,
+                isGameOver: false,
+                score: 0,
+                obstacles: [],
+                particles: [],
+                backgroundOffset: 0,
+                gameTime: 0,
+                bossActive: false,
+                lastBossScore: 0
+              }));
+            }}
           />
         )}
       </div>
