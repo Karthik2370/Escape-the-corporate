@@ -270,7 +270,8 @@ function App() {
       if (!bossActive) {
         const lastObstacle = newObstacles[newObstacles.length - 1];
         const minDistance = GAME_CONFIG.minObstacleDistance + (newSpeed - 1) * 20;
-        const shouldSpawn = !lastObstacle || (window.innerWidth - lastObstacle.x > minDistance);
+        const lastObstacleRight = lastObstacle ? lastObstacle.x + lastObstacle.width : 0;
+        const shouldSpawn = !lastObstacle || (window.innerWidth - lastObstacleRight > minDistance);
         
         const spawnRate = getObstacleSpawnRate(newSpeed, difficultyConfig);
         if (shouldSpawn && Math.random() < spawnRate) {
@@ -369,38 +370,32 @@ function App() {
           if (!next.isDropping && !next.hasDropped && next.x > 300 && next.x < window.innerWidth - 300) {
             const dropX = next.x + 24;
             const dropWidth = 60;
-            const safeGap = 200; // Increased safe gap
-            
+            // Use jumpHeight as a base for safe gap
+            const jumpBuffer = GAME_CONFIG.jumpHeight * 1.5;
             // Ensure UFO does not drop too close to the right edge
-            if (window.innerWidth - dropX < 200) return next;
-
+            if (window.innerWidth - dropX < jumpBuffer) return next;
             // Check for clear area around drop zone
             const clear = !newObstacles.some(o => {
               const oLeft = o.x;
               const oRight = o.x + o.width;
-              const dropLeft = dropX - safeGap;
-              const dropRight = dropX + dropWidth + safeGap;
-              
-              // Ensure no obstacles within the safe gap
+              const dropLeft = dropX - jumpBuffer;
+              const dropRight = dropX + dropWidth + jumpBuffer;
+              // Ensure no obstacles within the jump buffer before/after drop
               return (oRight > dropLeft && oLeft < dropRight);
             });
-            
             // Also check that the last obstacle is far enough
             const lastObstacle = newObstacles[newObstacles.length - 1];
             const lastObstacleClear = !lastObstacle || 
-              (lastObstacle.x + lastObstacle.width < dropX - safeGap) ||
-              (lastObstacle.x > dropX + dropWidth + safeGap);
-            
+              (lastObstacle.x + lastObstacle.width < dropX - jumpBuffer) ||
+              (lastObstacle.x > dropX + dropWidth + jumpBuffer);
             if (clear && lastObstacleClear && Math.random() < 0.015) { // Reduced drop chance
               next.isDropping = true;
               next.hasDropped = true;
               next.dropY = getGroundLevel() - 80;
-              
               // Pick a random obstacle to drop (from jump obstacles)
               const keys = Object.keys(JUMP_OBSTACLES);
               const type = keys[Math.floor(Math.random() * keys.length)];
               const config = { ...JUMP_OBSTACLES[type], title: 'UFO DROP' };
-              
               next.dropObstacle = {
                 id: 'ufo-' + Math.random().toString(36).substr(2, 9),
                 x: next.x + 24,

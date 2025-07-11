@@ -41,6 +41,18 @@ const StartModal = ({ highScore, onStart }) => {
       icon: Moon,
       color: 'from-indigo-600 to-purple-700',
       description: 'Starry night sky'
+    },
+    aurora: {
+      name: 'Aurora',
+      icon: Flame,
+      color: 'from-blue-900 to-teal-400',
+      description: 'Northern lights magic'
+    },
+    city: {
+      name: 'City',
+      icon: Trophy,
+      color: 'from-blue-900 to-purple-900',
+      description: 'Night city skyline'
     }
   };
 
